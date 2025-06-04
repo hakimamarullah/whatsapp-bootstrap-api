@@ -1,18 +1,48 @@
-# Stage 1: Build
-FROM node:20-slim AS builder
+FROM node:20-alpine AS development
 
-WORKDIR /app
+# Create app directory
+WORKDIR /usr/src/app
 
-COPY package*.json ./
-RUN npm install
+COPY --chown=node:node package*.json ./
 
-COPY . .
+# Install app dependencies using the `npm ci` command instead of `npm install`
+RUN npm ci
+
+# Bundle app source
+COPY --chown=node:node . .
+
+# Use the node user from the image (instead of the root user)
+USER node
+
+
+FROM node:20-alpine AS build
+
+WORKDIR /usr/src/app
+
+COPY --chown=node:node package*.json ./
+
+
+COPY --chown=node:node --from=development /usr/src/app/node_modules ./node_modules
+
+COPY --chown=node:node . .
+
+# Run the build command which creates the production bundle
 RUN npm run build
 
-# Stage 2: Runtime
-FROM node:20-slim
+# Set NODE_ENV environment variable
+ENV NODE_ENV=production
 
-# Install only runtime dependencies (skip build tools)
+
+RUN npm ci --omit=dev --ignore-scripts && npm cache clean --force
+
+
+###################
+# PRODUCTION
+###################
+
+FROM node:20-slim AS production
+
+
 RUN apt-get update && apt-get install -y --no-install-recommends \
   ca-certificates \
   fonts-liberation \
@@ -56,14 +86,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   xdg-utils \
   && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /app
 
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/package*.json ./
 
-RUN npm install --omit=dev
+# Copy the bundled code from the build stage to the production image
+COPY --chown=node:node --from=build /usr/src/app/node_modules ./node_modules
+COPY --chown=node:node --from=build /usr/src/app/dist ./dist
 
-EXPOSE 3000
+USER node
 
-CMD ["node", "dist/main"]
-
+CMD [ "node", "dist/main.js" ]
