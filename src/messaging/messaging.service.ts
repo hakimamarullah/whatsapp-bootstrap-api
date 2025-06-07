@@ -4,13 +4,15 @@ import * as qrcode from 'qrcode-terminal';
 import {PinoLogger} from 'nestjs-pino';
 import * as process from 'process';
 import {maskString, normalizePhone} from '../utils';
+import {EventEmitter2, OnEvent} from '@nestjs/event-emitter';
+import {OcrService} from '../ocr/ocr.service';
 
 @Injectable()
 export class MessagingService implements OnModuleInit {
 
     private client: Client;
 
-    constructor(private readonly log: PinoLogger) {
+    constructor(private readonly log: PinoLogger, private readonly eventEmitter: EventEmitter2, private readonly ocrService: OcrService) {
         this.log.setContext(MessagingService.name);
     }
 
@@ -43,6 +45,13 @@ export class MessagingService implements OnModuleInit {
         this.client.on('loading_screen', (percent: any, message: any) => {
             this.log.info('LOADING_SCREEN: %s %s', percent, message);
         })
+
+        this.client.on('message', (message: Message) => {
+            this.log.info(`Message from ${message.from}`);
+            this.eventEmitter.emit('message.incoming', message);
+        })
+
+
     }
 
     async sendMessage(to: string, message?: string, files?: Array<Express.Multer.File>): Promise<void> {
@@ -64,5 +73,22 @@ export class MessagingService implements OnModuleInit {
         }
         await this.client.sendMessage(chatId, message || '');
         this.log.info('Successfully sent message to %s', maskString(to, 7));
+    }
+
+
+    @OnEvent('message.incoming', {async: true})
+    async replyImageToText(message: Message) {
+        this.log.info(`Start Processing Image to Text from: ${message.from}`);
+        let result;
+        try {
+            result = await this.ocrService.extractText(message);
+            await message.reply(result);
+        } catch (err) {
+            this.log.error(err, `Error Processing Image to Text from: ${message.from} ${err.message}`);
+            await message.reply('Oops, something went wrong. Please Try again later!');
+            return;
+        }
+        this.log.info(`Successfully Processed Image to Text from: ${message.from} result: ${result}`);
+
     }
 }
