@@ -83,6 +83,7 @@ export class MessagingService implements OnModuleInit {
         try {
             if (!message.hasMedia) {
                 await message.reply('Please send an image to start OCR processing');
+                return;
             }
             result = await this.ocrService.extractText(message);
             await message.reply(result);
