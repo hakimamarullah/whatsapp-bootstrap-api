@@ -85,7 +85,7 @@ export class MessagingService implements OnModuleInit {
             await message.reply(result);
         } catch (err) {
             this.log.error(err, `Error Processing Image to Text from: ${message.from} ${err.message}`);
-            await message.reply('Oops, something went wrong. Please Try again later!');
+            await message.reply(`Oops, something went wrong. Please Try again later!\n${err.message}`);
             return;
         }
         this.log.info(`Successfully Processed Image to Text from: ${message.from} result: ${result}`);
