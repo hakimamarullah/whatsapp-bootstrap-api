@@ -1,9 +1,15 @@
 import {Module} from '@nestjs/common';
 import {MessagingModule} from './messaging/messaging.module';
 import {LoggerModule} from 'nestjs-pino';
+import {EventEmitterModule} from '@nestjs/event-emitter';
+import {OcrService} from './ocr/ocr.service';
+import {ConfigModule} from '@nestjs/config';
+import { OcrModule } from './ocr/ocr.module';
 
 @Module({
     imports: [
+        EventEmitterModule.forRoot({global: true}),
+        ConfigModule.forRoot({ isGlobal: true, cache: true }),
         LoggerModule.forRoot({
             pinoHttp: {
                 transport:
@@ -18,7 +24,9 @@ import {LoggerModule} from 'nestjs-pino';
                         : undefined,
             },
         }),
-        MessagingModule]
+        MessagingModule,
+        OcrModule],
+    providers: [OcrService]
 })
 export class AppModule {
 }
