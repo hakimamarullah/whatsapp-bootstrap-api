@@ -81,11 +81,14 @@ export class MessagingService implements OnModuleInit {
         this.log.info(`Start Processing Image to Text from: ${message.from}`);
         let result;
         try {
+            if (!message.hasMedia) {
+                await message.reply('Please send an image to start OCR processing');
+            }
             result = await this.ocrService.extractText(message);
             await message.reply(result);
         } catch (err) {
             this.log.error(err, `Error Processing Image to Text from: ${message.from} ${err.message}`);
-            await message.reply('Oops, something went wrong. Please Try again later!');
+            await message.reply(`Oops, something went wrong. Please Try again later!\n${err.message}`);
             return;
         }
         this.log.info(`Successfully Processed Image to Text from: ${message.from} result: ${result}`);
