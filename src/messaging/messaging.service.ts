@@ -23,10 +23,10 @@ export class MessagingService implements OnModuleInit {
             {
                 puppeteer: {
                     headless: true,
-                    args: ['--no-sandbox'],
+                    args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
                     ...additionalOptions
                 },
-                authStrategy: new LocalAuth({dataPath: './.wwebjs_auth'})
+                authStrategy: new LocalAuth()
             }
         )
 

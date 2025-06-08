@@ -79,10 +79,15 @@ WORKDIR /usr/src/app
 COPY --chown=node:node --from=build /usr/src/app/node_modules ./node_modules
 COPY --chown=node:node --from=build /usr/src/app/dist ./dist
 
-RUN chown -R node:node /usr/src/app
+RUN chown -R node:node /usr/src/app \
+    && mkdir -p ./.wwebjs_auth \
+    && chown -R node:node ./.wwebjs_auth \
+    && touch entrypoint.sh \
+    && echo "#!/bin/bash\nrm -rf /usr/src/app/.wwebjs_auth/session/Singleton*\nexec node dist/main.js" > entrypoint.sh \
+    && chmod +x entrypoint.sh
 
 USER node
 
-CMD ["node", "dist/main.js"]
+CMD ["./entrypoint.sh"]
 
 
