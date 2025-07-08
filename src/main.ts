@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import {Logger} from 'nestjs-pino';
 import {DocumentBuilder, SwaggerModule} from '@nestjs/swagger';
+import {eurekaClient} from './eureka';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
@@ -20,6 +21,7 @@ async function bootstrap() {
     jsonDocumentUrl: 'swagger/json',
   });
 
-  await app.listen(process.env.PORT ?? 3000);
+  await app.listen(process.env.PORT ?? 4000);
+  eurekaClient.start();
 }
 bootstrap();
