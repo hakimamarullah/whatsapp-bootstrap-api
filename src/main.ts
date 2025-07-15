@@ -1,27 +1,28 @@
-import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
+import {NestFactory} from '@nestjs/core';
+import {AppModule} from './app.module';
 import {Logger} from 'nestjs-pino';
 import {DocumentBuilder, SwaggerModule} from '@nestjs/swagger';
 import {eurekaClient} from './eureka';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, {
-    bufferLogs: true,
-  });
+    const app = await NestFactory.create(AppModule, {
+        bufferLogs: true,
+    });
 
-  app.useLogger(app.get(Logger))
-  const config = new DocumentBuilder()
-      .setTitle('WhatsApp API')
-      .setDescription('The WhatsApp API built on top of WWebJS library')
-      .setVersion('v1.0.0')
-      .build();
-  const documentFactory = () => SwaggerModule.createDocument(app, config);
+    app.useLogger(app.get(Logger))
+    const config = new DocumentBuilder()
+        .setTitle('WhatsApp API')
+        .setDescription('The WhatsApp API built on top of WWebJS library')
+        .setVersion('v1.0.0')
+        .build();
+    const documentFactory = () => SwaggerModule.createDocument(app, config);
 
-  SwaggerModule.setup('swagger', app, documentFactory, {
-    jsonDocumentUrl: 'swagger/json',
-  });
+    SwaggerModule.setup('swagger', app, documentFactory, {
+        jsonDocumentUrl: 'swagger/json',
+    });
 
-  await app.listen(process.env.PORT ?? 4000);
-  eurekaClient.start();
+    await app.listen(process.env.PORT ?? 4000);
+    eurekaClient.start();
 }
+
 bootstrap();
