@@ -39,9 +39,9 @@ export class MessagingService implements OnModuleInit {
                 const store = new MongoStore({mongoose});
 
                 authStrategy = new RemoteAuth({
-                    clientId: process.env.WA_CLIENT_ID || 'starline-client',
+                    clientId: process.env.WA_CLIENT_ID ?? 'starline-client',
                     store,
-                    backupSyncIntervalMs: parseInt(process.env.WA_BACKUP_SYNC_INTERVAL || '300000'), // 5 minutes
+                    backupSyncIntervalMs: parseInt(process.env.WA_BACKUP_SYNC_INTERVAL ?? '300000'), // 5 minutes
                 });
             } catch (err) {
                 this.log.error(err, 'Failed to connect to MongoDB, falling back to LocalAuth');
@@ -68,6 +68,18 @@ export class MessagingService implements OnModuleInit {
             this.log.info('REMOTE_SESSION_SAVED: %s', authStrategy.clientId)
         });
 
+        this.client.on('authenticated', (clientSession) => {
+            this.log.info('AUTHENTICATED: %s', clientSession?.WABrowserId);
+        })
+
+        this.client.on('auth_failure', (message) => {
+            this.log.info('AUTHENTICATION FAILED %s', message);
+        });
+
+        this.client.on('disconnected', (reason) => {
+            this.log.info('DISCONNECTED: %s', reason);
+        });
+
         this.client.on('ready', () => {
             this.log.info('WhatsApp Client is ready!');
         });
@@ -77,7 +89,7 @@ export class MessagingService implements OnModuleInit {
         });
 
         this.client.on('message', (message: Message) => {
-            let enableMessageListener = (process.env.ENABLE_MESSAGE_LISTENER || 'false') === 'true'
+            let enableMessageListener = (process.env.ENABLE_MESSAGE_LISTENER ?? 'false') === 'true'
             if (enableMessageListener) {
                 this.log.info('Message received from %s: %s', message.from, message.body);
                 this.eventEmitter.emit('message.incoming', message);
@@ -133,8 +145,8 @@ export class MessagingService implements OnModuleInit {
     }
 
     private async connectWithRetry(uri: string): Promise<void> {
-        const maxAttempts = parseInt(process.env.MONGO_MAX_ATTEMPTS || '5');
-        const delayMs = parseInt(process.env.MONGO_RETRY_DELAY || '5000');
+        const maxAttempts = parseInt(process.env.MONGO_MAX_ATTEMPTS ?? '20');
+        const delayMs = parseInt(process.env.MONGO_RETRY_DELAY ?? '10000');
 
         for (let attempt = 1; attempt <= maxAttempts; attempt++) {
             try {
