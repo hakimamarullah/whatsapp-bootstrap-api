@@ -41,7 +41,7 @@ export class MessagingService implements OnModuleInit {
                 authStrategy = new RemoteAuth({
                     clientId: process.env.WA_CLIENT_ID || 'starline-client',
                     store,
-                    backupSyncIntervalMs: parseInt(process.env.WA_BACKUP_SYNC_INTERVAL) || 60000, // 5 minutes
+                    backupSyncIntervalMs: parseInt(process.env.WA_BACKUP_SYNC_INTERVAL || '300000'), // 5 minutes
                 });
             } catch (err) {
                 this.log.error(err, 'Failed to connect to MongoDB, falling back to LocalAuth');
@@ -133,8 +133,8 @@ export class MessagingService implements OnModuleInit {
     }
 
     private async connectWithRetry(uri: string): Promise<void> {
-        const maxAttempts = parseInt(process.env.MONGO_MAX_ATTEMPTS) || 5;
-        const delayMs = parseInt(process.env.MONGO_RETRY_DELAY) || 5000;
+        const maxAttempts = parseInt(process.env.MONGO_MAX_ATTEMPTS || '5');
+        const delayMs = parseInt(process.env.MONGO_RETRY_DELAY || '5000');
 
         for (let attempt = 1; attempt <= maxAttempts; attempt++) {
             try {
